@@ -18,10 +18,11 @@ const CUSTOMIZATION_COST = 350;
 
 // Elements
 const ui = {
+    resetCustomizationBtn: document.getElementById('reset-customization'),
     modelSelect: document.getElementById('model-select'),
     sizeSelect: document.getElementById('size-select'),
     modeBtns: document.querySelectorAll('.mode-btn'),
-    textInput: document.getElementById('custom-text'),
+    customText: document.getElementById('custom-text'),
     imageInput: document.getElementById('custom-image'),
     basePriceDisplay: document.getElementById('base-price'),
     customFeeRow: document.getElementById('customization-fee-row'),
@@ -91,16 +92,21 @@ function setupEventListeners() {
         });
     }
 
-    // Text Input
-    ui.textInput.addEventListener('input', () => {
-        triggerTextureUpdate();
-        checkCustomizationFee();
-    });
+    let debounceTimeout;
+    // Custom Text Input
+    ui.customText.addEventListener('input', () => {
+        
+        clearTimeout(debounceTimeout);
 
+        debounceTimeout = setTimeout(() => {
+            triggerTextureUpdate();
+            checkCustomizationFee();
+        }, 600);
+    });
+    
     // Reset Customization
-    const resetBtn = document.getElementById('reset-customization');
-    resetBtn.addEventListener('click', () => {
-        ui.textInput.value = '';
+    ui.resetCustomizationBtn.addEventListener('click', () => {
+        ui.customText.value = '';
         ui.imageInput.value = '';
         currentUploadedImage = null; // Clear image var
         triggerTextureUpdate(); // Will fallback to clear canvas
@@ -162,7 +168,7 @@ function updatePrice() {
 }
 
 function checkCustomizationFee() {
-    const hasText = ui.textInput.value.trim().length > 0;
+    const hasText = ui.customText.value.trim().length > 0;
     const hasImage = ui.imageInput.files.length > 0; // Note: if user cancels file dialog, files is empty. But if we use currentUploadedImage it's safer.
     // Actually currentUploadedImage persists until reset.
     // ui.imageInput.files is what controls the file input visual.
@@ -172,16 +178,14 @@ function checkCustomizationFee() {
     // Better:
     const isCustomized = hasText || currentUploadedImage;
 
-    const resetBtn = document.getElementById('reset-customization');
-
     if (isCustomized) {
         state.customizationFee = CUSTOMIZATION_COST;
         ui.customFeeRow.style.display = 'flex';
-        resetBtn.style.display = 'block'; // Show reset button
+        ui.resetCustomizationBtn.style.display = 'block'; // Show reset button
     } else {
         state.customizationFee = 0;
         ui.customFeeRow.style.display = 'none';
-        resetBtn.style.display = 'none'; // Hide reset button
+        ui.resetCustomizationBtn.style.display = 'none'; // Hide reset button
     }
     updatePrice();
 }
@@ -241,7 +245,7 @@ function triggerTextureUpdate(newImage = null) {
     // For now, let's just draw the text/image centralized.
 
     // Draw Text
-    const text = ui.textInput.value;
+    const text = ui.customText.value;
     if (text) {
         ctx.fillStyle = '#FFFFFF'; // "Primary text color: #FFFFFF"
         ctx.font = 'bold 100px Anta'; // Big font for high res texture
@@ -272,7 +276,7 @@ function addToCart() {
     const existingItem = state.cart.find(item =>
         item.model === state.model &&
         item.size === state.size &&
-        item.text === ui.textInput.value &&
+        item.text === ui.customText.value &&
         item.hasCustomization === (state.customizationFee > 0)
     );
 
@@ -284,7 +288,7 @@ function addToCart() {
             size: state.size,
             price: state.basePrice + state.customizationFee,
             hasCustomization: state.customizationFee > 0,
-            text: ui.textInput.value,
+            text: ui.customText.value,
             // We can also store image name if needed, but we don't handle persisting image binary deep logic here yet
             qty: 1,
             id: Date.now()

@@ -138,7 +138,6 @@ export function loadModel(modelKey) {
 
     // Paths to try
     const paths = [
-        `./public/models/${fileName}`, // GitHub Pages / Raw Structure
         `/models/${fileName}`,         // Vite / Root Serve
         `models/${fileName}`           // Relative fallback
     ];
